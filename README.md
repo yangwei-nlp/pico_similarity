@@ -1,0 +1,2 @@
+# pico_similarity
+给定一份PICO，可以从众多文档中给出与该PICO相似度的排序
