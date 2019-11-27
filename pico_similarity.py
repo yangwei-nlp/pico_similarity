@@ -5,6 +5,8 @@ Description :
 """
 from sklearn.metrics.pairwise import cosine_similarity
 import os
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer, TfidfTransformer
+
 
 def read_data(dir1, dir2):
     """
@@ -32,28 +34,37 @@ def read_data(dir1, dir2):
     return input_sentence, corpus
 
 
-
 def compute_func(input_name, input_sentence, corpus, top_k=10):
-    # -----------------------------------------
-    # 利用 bert 词向量计算文本相似度
+    """利用 bert 词向量计算文本相似度"""
     from bert_serving.client import BertClient
 
     bc = BertClient(ip='172.29.231.5', output_fmt='list', check_version=False)
     # bc.encode(['First do it', 'then do it right', 'then do it better'])
 
     corpus_deal = [text.replace('\n', '') for text in corpus]
-    embed_vec = bc.encode(corpus_deal)
+    embed_vecs = bc.encode(corpus_deal)
     input_vec = bc.encode([input_sentence])
 
-    similarities = cosine_similarity(input_vec, embed_vec)[0]
+    similarities = cosine_similarity(input_vec, embed_vecs)[0]
     top_k_idx = similarities.argsort()[::-1][0: top_k]
-    prefix = input_name.split('/')[0] + '/' +input_name.split('/')[1] + '/'
+
+    prefix = input_name.split('/')[0] + '/' + input_name.split('/')[1] + '/'
     file_name = prefix + 'predict ' + input_name.split('/')[-1].split('input-')[1]
     with open(file_name, 'w', encoding='utf-8-sig') as file:
         for rank, idx in enumerate(top_k_idx):
             file.write('------------- Rank: {},  Paper Title: {} ----------------\n'.format(rank + 1, idx + 1))
             file.write(corpus[idx])
             file.write('\n\n\n')
+
+
+def compute_func_v2(dir1, input_sentence, corpus):
+    """使用 TF-IDF 计算文本相似度"""
+    # 1. 得到词典
+    vectorizer = TfidfVectorizer()
+    vectorizer.fit_transform(corpus + [input_sentence])
+    # 2. 得到 TF-IDF 矩阵
+
+    # 3. 计算相似度值
 
 
 def compute_all(files_dir='data/'):
